@@ -1,0 +1,68 @@
+<!doctype html>
+
+<fieldset name="keyboard">
+	<legend>Keyboard</legend>
+	<button>KeyX</button>
+	<button value="Ctrl+Shift+KeyS">ctrl+shift+s</button>
+
+	<select>
+		<option>...</option>
+	</select>
+
+	<textarea autofocus></textarea>
+</fieldset>
+
+<fieldset name="mouse">
+	<legend>Mouse</legend>
+	<button value="rel">move mouse relative +100/+100</button>
+	<button value="abs">move mouse absolute 30000/20000</button>
+	<button value="click">click</button>
+	<input type="text" />
+</fieldset>
+
+
+<script src="scancodes.js"></script>
+<script>
+let url = new URL(location.href);
+let port = url.searchParams.get("port") || "3456"
+let ws = new WebSocket(`ws://localhost:${port}/`);
+let ta = document.querySelector("textarea");
+
+[...document.querySelectorAll("[name=mouse] button")].forEach(button => {
+	button.addEventListener("click", _ => {
+		let data;
+		switch (button.value) {
+			case "rel": data = { _:"mousemove", x: 100, y: 100, pos: "rel" }; break;
+			case "abs": data = { _:"mousemove", x: 30000, y: 20000, pos: "abs" }; break;
+			case "click": data = { _:"click"}; break;
+		}
+		ws.send(JSON.stringify(data));
+	});
+});
+
+
+[...document.querySelectorAll("[name=keyboard] button")].forEach(button => {
+	button.addEventListener("click", _ => {
+		ta.focus();
+		let data = {
+			_:"key",
+			"key": button.value || button.textContent
+			}
+		ws.send(JSON.stringify(data));
+	});
+});
+
+document.querySelector("[name=keyboard] select").addEventListener("change", e => {
+	ta.focus();
+	let data = {
+		_:"key",
+		"key": e.target.value
+	}
+	ws.send(JSON.stringify(data));
+})
+
+for (let key in SCANCODES) {
+	let option = new Option(key);
+	document.querySelector("select").append(option);
+}
+</script>
